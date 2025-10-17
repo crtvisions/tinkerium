@@ -1,10 +1,98 @@
-/* style.css */
-body {
-    font-family: sans-serif;
-    text-align: center;
-    padding-top: 50px;
+/* Import the retro font */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+/* Define the Tokyo Night Storm color palette */
+:root {
+    --background: #1a1b26; /* Dark background */
+    --foreground: #a9b1d6; /* Main text color */
+    --card-bg: #24283b;    /* Background for cards/elements */
+    --border: #414868;     /* Border color */
+    --accent: #7aa2f7;     /* A bright blue for highlights */
+    --hover-accent: #c0caf5; /* Lighter color for text on hover */
 }
 
-h1 {
-    color: #ff0000; /* Bright red for "retro style" example */
+/* Basic Reset & Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Header Styles */
+header {
+    text-align: center;
+    margin-bottom: 60px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 20px;
+}
+
+header h1 {
+    font-size: 3.5rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+header .subtitle {
+    font-size: 1.2rem;
+}
+
+/* Tools Grid Layout */
+#tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+/* Individual Tool Card Styles */
+.tool-card {
+    background-color: var(--card-bg);
+    border: 2px solid var(--border);
+    padding: 25px;
+    text-decoration: none;
+    color: var(--foreground);
+    transition: transform 0.2s ease-out, border-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.tool-card:hover, .tool-card:focus {
+    transform: translateY(-8px);
+    border-color: var(--accent);
+    outline: none;
+}
+
+.tool-card .icon-container {
+    margin-bottom: 20px;
+}
+
+.tool-card .icon-container svg {
+    width: 48px;
+    height: 48px;
+    fill: var(--accent);
+}
+
+.tool-card h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: var(--hover-accent);
+}
+
+.tool-card p {
+    font-size: 1rem;
 }
