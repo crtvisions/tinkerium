@@ -437,7 +437,16 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 100)); // Extra delay for complex animations to initialize
 
         setProgress('Initializing GIF encoder...');
-        const targetElement = iframeRef.current.contentWindow.document.body;
+        
+        // UPDATED: Target the specific '.scene' element for more accurate capture
+        const targetElement = iframeRef.current.contentWindow.document.querySelector('.scene');
+
+        if (!targetElement) {
+            alert('Could not find the ".scene" element to capture. Please make sure your HTML contains an element with class="scene".');
+            setIsGenerating(false);
+            return;
+        }
+
         const gif = new window.GIF({
             workers: 2, quality: GIF_SETTINGS.QUALITY, workerScript: workerUrl,
             width: numericWidth, height: numericHeight,
@@ -519,3 +528,4 @@ if (!rootElement) {
 }
 const root = ReactDOM.createRoot(rootElement);
 root.render(React.createElement(React.StrictMode, null, React.createElement(App, null)));
+
