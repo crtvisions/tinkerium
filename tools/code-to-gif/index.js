@@ -251,7 +251,7 @@ const Button = ({ children, variant = 'primary', ...props }) => {
     return React.createElement("button", { className: `${baseClasses} ${variantClasses[variant]}`, ...props }, children);
 };
 
-const CodeEditor = ({ code, setCode }) => (React.createElement("div", { className: "h-full flex flex-col" }, React.createElement("label", { htmlFor: "code-editor", className: "text-sm font-medium text-gray-400 mb-2 px-1" }, "Animation Code (HTML, CSS, JS)"), React.createElement("textarea", { id: "code-editor", value: code, onChange: (e) => setCode(e.target.value), className: "w-full flex-grow bg-gray-800 text-gray-300 p-4 rounded-lg border border-gray-700 focus:ring-2 focus:ring-pink-500 focus:outline-none font-mono text-sm resize-none", spellCheck: "false" })));
+const CodeEditor = ({ code, setCode }) => (React.createElement("div", { className: "h-full flex flex-col" }, React.createElement("label", { htmlFor: "code-editor", className: "text-sm font-medium text-gray-400 mb-2 px-1" }, "Animation Code (HTML, CSS, JS)"), React.createElement("textarea", { id: "code-editor", value: code, onChange: (e) => setCode(e.target.value), className: "w-full flex-grow bg-gray-800 text-gray-300 p-4 rounded-lg border border-gray-700 focus:ring-2 focus:ring-pink-500 focus:outline-none font-mono text-sm resize-none", spellCheck: false })));
 
 const PreviewPanel = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, onDownload, dimensions }) => {
     return React.createElement("div", { className: "relative w-full h-full bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex items-center justify-center", style: { aspectRatio: `${dimensions.width} / ${dimensions.height}` } },
@@ -263,7 +263,8 @@ const PreviewPanel = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, 
             )),
             gifUrl && !isGenerating && (React.createElement("div", { className: "w-full h-full flex flex-col items-center justify-center gap-4" },
                 React.createElement("img", { src: gifUrl, alt: "Generated GIF", className: "max-w-full max-h-[80%] object-contain rounded-lg" }),
-                React.createElement(Button, { onClick: onDownload }, React.createElement(DownloadIcon, { className: "w-5 h-5" }), "Download GIF")
+// FIX: The children of the Button component are moved into the `children` prop to fix a TypeScript error.
+                React.createElement(Button, { onClick: onDownload, children: [React.createElement(DownloadIcon, { className: "w-5 h-5" }), "Download GIF"] })
             ))
         ))
     );
@@ -484,10 +485,12 @@ function App() {
                     React.createElement(CodeEditor, { code: code, setCode: setCode })),
                 React.createElement(SettingsPanel, { duration, setDuration, fps, setFps }),
                  React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
-                    React.createElement(Button, { onClick: () => setPreviewCode(injectStyleIntoCode(code, filterStyle)), variant: "secondary" },
-                        React.createElement(PlayIcon, { className: "w-5 h-5" }), "Update Preview"),
-                    React.createElement(Button, { onClick: handleGenerateGif, disabled: isGenerating || isWorkerLoading },
-                        React.createElement(MovieIcon, { className: "w-5 h-5" }), isGenerating ? progress : isWorkerLoading ? 'Loading Library...' : 'Generate GIF')
+// FIX: The children of the Button component are moved into the `children` prop to fix a TypeScript error.
+                    React.createElement(Button, { onClick: () => setPreviewCode(injectStyleIntoCode(code, filterStyle)), variant: "secondary", children: [
+                        React.createElement(PlayIcon, { className: "w-5 h-5" }), "Update Preview"] }),
+// FIX: The children of the Button component are moved into the `children` prop to fix a TypeScript error.
+                    React.createElement(Button, { onClick: handleGenerateGif, disabled: isGenerating || isWorkerLoading, children: [
+                        React.createElement(MovieIcon, { className: "w-5 h-5" }), isGenerating ? progress : isWorkerLoading ? 'Loading Library...' : 'Generate GIF'] })
                 ),
                 React.createElement("div", { className: "text-sm text-gray-400 p-2 bg-gray-800/50 rounded-md" },
                     React.createElement("strong", null, "Tip:"), " GIF dimensions are now read directly from the ", React.createElement("code", { className: "text-pink-400" }, ".scene"), " class in your code.")
