@@ -269,7 +269,6 @@ const PreviewPanel = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, 
     );
 };
 
-// UPDATED: Settings Panel no longer has Width/Height inputs
 const SettingsPanel = ({ duration, setDuration, fps, setFps }) => (React.createElement("div", { className: "grid grid-cols-2 gap-4 p-4 bg-gray-800 rounded-lg border border-gray-700" },
     React.createElement("div", null,
         React.createElement("label", { htmlFor: "duration", className: "block text-sm font-medium text-gray-400 mb-2" }, "Duration (s)"),
@@ -323,13 +322,11 @@ function App() {
     const [isWorkerLoading, setIsWorkerLoading] = useState(true);
     const [duration, setDuration] = useState(GIF_SETTINGS.DURATION_SECONDS);
     const [fps, setFps] = useState(GIF_SETTINGS.FPS);
-    // UPDATED: width/height state is removed. We use a single 'dimensions' state now.
     const [dimensions, setDimensions] = useState({ width: GIF_SETTINGS.DEFAULT_WIDTH, height: GIF_SETTINGS.DEFAULT_HEIGHT });
     const [colorScheme, setColorScheme] = useState('none');
     const [filters, setFilters] = useState(initialFilters);
     const iframeRef = useRef(null);
 
-    // UPDATED: This effect now reads dimensions directly from the code and updates the state.
     useEffect(() => {
         const detectedDuration = extractAnimationDuration(code);
         if (detectedDuration !== null && detectedDuration > 0) {
@@ -410,7 +407,6 @@ function App() {
         setIsGenerating(true);
         setGifUrl(null);
         
-        // UPDATED: Dimensions are now sourced directly from the state that reflects the code.
         const { width: numericWidth, height: numericHeight } = dimensions;
 
         const captureCode = injectStyleIntoCode(code, filterStyle);
@@ -455,9 +451,13 @@ function App() {
              }
             try {
                 const canvas = await window.html2canvas(targetElement, {
-                    // Pass the exact dimensions from the code. No more scaling.
                     width: numericWidth, 
                     height: numericHeight,
+                    // FIX: Explicitly set scale to 1. This prevents html2canvas from using
+                    // window.devicePixelRatio, ensuring the captured canvas has the exact
+                    // dimensions required by gif.js, thus fixing the cropping issue on
+                    // high-DPI (Retina) displays.
+                    scale: 1,
                     useCORS: true, 
                     allowTaint: true, 
                     backgroundColor: null,
@@ -482,7 +482,6 @@ function App() {
             React.createElement("div", { className: "lg:w-1/2 flex flex-col gap-4" },
                 React.createElement("div", { className: "flex-grow min-h-[50vh] lg:min-h-0" },
                     React.createElement(CodeEditor, { code: code, setCode: setCode })),
-                // UPDATED: Pass new props to SettingsPanel
                 React.createElement(SettingsPanel, { duration, setDuration, fps, setFps }),
                  React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
                     React.createElement(Button, { onClick: () => setPreviewCode(injectStyleIntoCode(code, filterStyle)), variant: "secondary" },
@@ -496,7 +495,6 @@ function App() {
             React.createElement("div", { className: "lg:w-1/2 flex flex-col gap-4" },
                  React.createElement("div", { className: "flex-grow flex flex-col" },
                     React.createElement("h2", { className: "text-sm font-medium text-gray-400 mb-2 w-full text-left flex-shrink-0" }, "Preview / Result"),
-                    // UPDATED: Pass dimensions state to PreviewPanel
                     React.createElement(PreviewPanel, { previewCode, gifUrl, isGenerating, progress, iframeRef, dimensions, onDownload: handleDownload })
                 ),
                  React.createElement("div", { className: "flex-shrink-0" },
@@ -514,4 +512,3 @@ if (!rootElement) {
 }
 const root = ReactDOM.createRoot(rootElement);
 root.render(React.createElement(React.StrictMode, null, React.createElement(App, null)));
-
