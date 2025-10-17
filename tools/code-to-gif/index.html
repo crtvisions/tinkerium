@@ -21,5 +21,20 @@
   <body class="bg-gray-900 text-white">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '10px';
+        errorDiv.style.left = '10px';
+        errorDiv.style.padding = '10px';
+        errorDiv.style.backgroundColor = 'red';
+        errorDiv.style.color = 'white';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.innerText = `Error: ${message} at ${source}:${lineno}:${colno}`;
+        document.body.appendChild(errorDiv);
+        return true;
+      };
+    </script>
   </body>
 </html>
