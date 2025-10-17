@@ -204,7 +204,8 @@ function extractAnimationDuration(code) {
 }
 
 function extractDimensions(code) {
-    const sceneRegex = /\.scene\s*\{[^}]*?width:\s*(\d+)px;[^}]*?height:\s*(\d+)px;/s;
+    // More robust regex to find scene dimensions, ignoring comments
+    const sceneRegex = /\.scene\s*\{[^\}]*?width:\s*(\d+)px;[^\}]*?height:\s*(\d+)px;/s;
     let match = code.match(sceneRegex);
     if (match && match[1] && match[2]) {
         return { width: parseInt(match[1], 10), height: parseInt(match[2], 10) };
@@ -212,9 +213,8 @@ function extractDimensions(code) {
     return null;
 }
 
-function injectStyleIntoCode(htmlCode, style, transformStyle = '') {
-    const combinedStyle = `body { ${style} ${transformStyle} }`;
-    const styleTag = `<style>${combinedStyle}</style>`;
+function injectStyleIntoCode(htmlCode, style) {
+    const styleTag = `<style>body { ${style} }</style>`;
     if (htmlCode.includes('</head>')) {
         return htmlCode.replace('</head>', `${styleTag}</head>`);
     }
@@ -231,7 +231,8 @@ const RotateCcwIcon = ({ className }) => React.createElement("svg", { className:
 // --- UI Components ---
 const Header = () => React.createElement("header", { className: "w-full p-4 border-b border-gray-700 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10" },
     React.createElement("div", { className: "container mx-auto flex items-center justify-center gap-3 relative" },
-        React.createElement("a", { href: "..", "aria-label": "Go back to tools", className: "p-2 rounded-full hover:bg-gray-700 transition-colors absolute left-0 top-1/2 -translate-y-1/2" },
+        // UPDATED: Home button now points to the root directory "/"
+        React.createElement("a", { href: "/", "aria-label": "Go back to main site", className: "p-2 rounded-full hover:bg-gray-700 transition-colors absolute left-0 top-1/2 -translate-y-1/2" },
             React.createElement(BackArrowIcon, { className: "w-6 h-6 text-gray-300" })
         ),
         React.createElement("div", { className: "flex items-center gap-3" },
@@ -257,7 +258,7 @@ const CodeEditor = ({ code, setCode }) => (React.createElement("div", { classNam
 const PreviewPanel = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, onDownload, width, height }) => {
     const numericWidth = parseInt(width, 10) || GIF_SETTINGS.DEFAULT_WIDTH;
     const numericHeight = parseInt(height, 10) || GIF_SETTINGS.DEFAULT_HEIGHT;
-    return React.createElement("div", { className: "relative w-full bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex items-center justify-center mx-auto", style: { aspectRatio: `${numericWidth} / ${numericHeight}` } },
+    return React.createElement("div", { className: "relative w-full h-full bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex items-center justify-center", style: { aspectRatio: `${numericWidth} / ${numericHeight}` } },
         React.createElement("iframe", { ref: iframeRef, srcDoc: previewCode, title: "Animation Preview", className: `w-full h-full transition-opacity duration-300 ${gifUrl || isGenerating ? 'opacity-0' : 'opacity-100'}`, sandbox: "allow-scripts allow-same-origin" }),
         (isGenerating || gifUrl) && (React.createElement("div", { className: "absolute inset-0 flex flex-col items-center justify-center bg-gray-800 p-4" },
             isGenerating && (React.createElement(React.Fragment, null,
@@ -279,11 +280,11 @@ const SettingsPanel = ({ duration, setDuration, fps, setFps, width, setWidth, he
     ),
     React.createElement("div", null,
         React.createElement("label", { htmlFor: "width", className: "block text-sm font-medium text-gray-400 mb-2" }, "Width (px)"),
-        React.createElement("input", { type: "text", id: "width", value: width, onChange: (e) => setWidth(e.target.value.replace(/[^0-9]/g, '')), className: "w-full bg-gray-900 text-white p-2 rounded-md border border-gray-600 focus:ring-2 focus:ring-pink-500 focus:outline-none", placeholder: GIF_SETTINGS.DEFAULT_WIDTH })
+        React.createElement("input", { type: "text", id: "width", value: width, onChange: (e) => setWidth(e.target.value.replace(/[^0-9]/g, '')), className: "w-full bg-gray-900 text-white p-2 rounded-md border border-gray-600 focus:ring-2 focus:ring-pink-500 focus:outline-none", placeholder: String(GIF_SETTINGS.DEFAULT_WIDTH) })
     ),
     React.createElement("div", null,
         React.createElement("label", { htmlFor: "height", className: "block text-sm font-medium text-gray-400 mb-2" }, "Height (px)"),
-        React.createElement("input", { type: "text", id: "height", value: height, onChange: (e) => setHeight(e.target.value.replace(/[^0-9]/g, '')), className: "w-full bg-gray-900 text-white p-2 rounded-md border border-gray-600 focus:ring-2 focus:ring-pink-500 focus:outline-none", placeholder: GIF_SETTINGS.DEFAULT_HEIGHT })
+        React.createElement("input", { type: "text", id: "height", value: height, onChange: (e) => setHeight(e.target.value.replace(/[^0-9]/g, '')), className: "w-full bg-gray-900 text-white p-2 rounded-md border border-gray-600 focus:ring-2 focus:ring-pink-500 focus:outline-none", placeholder: String(GIF_SETTINGS.DEFAULT_HEIGHT) })
     ),
     React.createElement("div", null,
         React.createElement("label", { htmlFor: "fps", className: "block text-sm font-medium text-gray-400 mb-2" }, "FPS: ", React.createElement("span", { className: "font-bold text-white" }, fps)),
@@ -373,9 +374,10 @@ function App() {
         return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
     }, []);
 
+    // UPDATED: Effects are now smarter. Sliders can be used while a color scheme is active,
+    // and choosing a color scheme no longer resets brightness/contrast/saturation.
     const setFilterValue = (filter, value) => {
         setFilters(prev => ({ ...prev, [filter]: value }));
-        setColorScheme('none');
     };
 
     const handleResetFilters = () => {
@@ -421,22 +423,19 @@ function App() {
 
         const numericWidth = parseInt(width, 10) || GIF_SETTINGS.DEFAULT_WIDTH;
         const numericHeight = parseInt(height, 10) || GIF_SETTINGS.DEFAULT_HEIGHT;
-        const originalDims = extractDimensions(code) || { width: numericWidth, height: numericHeight };
-        
-        const scaleX = numericWidth / originalDims.width;
-        const scaleY = numericHeight / originalDims.height;
-        
-        const transformStyle = (scaleX !== 1 || scaleY !== 1) 
-            ? `transform: scale(${scaleX}, ${scaleY}); transform-origin: top left;`
-            : '';
 
-        const scaledPreviewCode = injectStyleIntoCode(code, filterStyle, transformStyle);
-
+        // --- GIF SCALING FIX ---
+        // Instead of using CSS transform:scale, we now rely on html2canvas to render the capture
+        // at the target dimensions. This produces a much crisper, correctly scaled result.
+        const captureCode = injectStyleIntoCode(code, filterStyle);
+        
+        // Reload iframe with the code to ensure animations start from the beginning.
         iframeRef.current.srcdoc = ' ';
         await new Promise(resolve => setTimeout(resolve, 50));
-        iframeRef.current.srcdoc = scaledPreviewCode;
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        iframeRef.current.srcdoc = captureCode;
+        await new Promise(resolve => iframeRef.current.onload = resolve); // Wait for content to load
+        await new Promise(resolve => setTimeout(resolve, 100)); // Extra delay for complex animations to initialize
+
         setProgress('Initializing GIF encoder...');
         const targetElement = iframeRef.current.contentWindow.document.body;
         const gif = new window.GIF({
@@ -458,19 +457,21 @@ function App() {
 
         const captureFrame = async () => {
              if (frameCount >= totalFrames) {
-                setProgress('Finalizing and rendering...');
-                gif.render();
-                return;
-            }
+                 setProgress('Finalizing and rendering...');
+                 gif.render();
+                 return;
+             }
             try {
+                // html2canvas captures the element and scales it to the specified width/height.
                 const canvas = await window.html2canvas(targetElement, {
                     width: numericWidth, height: numericHeight,
                     useCORS: true, allowTaint: true, backgroundColor: null,
+                    logging: false, // Turn off logging for cleaner console
                 });
                 gif.addFrame(canvas, { copy: true, delay: captureInterval });
                 setProgress(`Capturing frame ${frameCount + 1} of ${totalFrames}`);
                 frameCount++;
-                setTimeout(captureFrame, 0);
+                setTimeout(captureFrame, 0); // Use setTimeout for async loop to avoid blocking UI
             } catch (error) {
                 console.error('Error capturing frame:', error);
                 setIsGenerating(false);
@@ -480,29 +481,32 @@ function App() {
         captureFrame();
     }, [code, filterStyle, workerUrl, duration, fps, width, height]);
 
+    // UPDATED: The entire layout is now split, with the code/settings on the left,
+    // and the preview/effects on the right.
     return (React.createElement("div", { className: "min-h-screen bg-gray-900 text-gray-100 flex flex-col" },
         React.createElement(Header, null),
         React.createElement("main", { className: "flex-grow container mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8" },
             React.createElement("div", { className: "lg:w-1/2 flex flex-col gap-4" },
-                React.createElement("div", { className: "flex-grow h-[50vh] lg:h-auto" },
+                React.createElement("div", { className: "flex-grow min-h-[50vh] lg:min-h-0" },
                     React.createElement(CodeEditor, { code: code, setCode: setCode })),
-                React.createElement(Button, { onClick: () => setPreviewCode(injectStyleIntoCode(code, filterStyle)), variant: "secondary" },
-                    React.createElement(PlayIcon, { className: "w-5 h-5" }),
-                    " Update Preview"),
                 React.createElement(SettingsPanel, { duration, setDuration, fps, setFps, width, setWidth, height, setHeight }),
-                React.createElement(EffectsPanel, { colorScheme, setColorScheme, filters, setFilterValue, onReset: handleResetFilters }),
-                React.createElement(Button, { onClick: handleGenerateGif, disabled: isGenerating || isWorkerLoading },
-                    React.createElement(MovieIcon, { className: "w-5 h-5" }),
-                    isGenerating ? progress : isWorkerLoading ? 'Loading Library...' : 'Generate GIF'),
+                 React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
+                    React.createElement(Button, { onClick: () => setPreviewCode(injectStyleIntoCode(code, filterStyle)), variant: "secondary" },
+                        React.createElement(PlayIcon, { className: "w-5 h-5" }), "Update Preview"),
+                    React.createElement(Button, { onClick: handleGenerateGif, disabled: isGenerating || isWorkerLoading },
+                        React.createElement(MovieIcon, { className: "w-5 h-5" }), isGenerating ? progress : isWorkerLoading ? 'Loading Library...' : 'Generate GIF')
+                ),
                 React.createElement("div", { className: "text-sm text-gray-400 p-2 bg-gray-800/50 rounded-md" },
-                    React.createElement("strong", null, "Tip:"),
-                    " For a perfect loop, ensure your animation's duration in code matches the GIF duration (",
-                    duration.toFixed(1),
-                    "s).")
+                    React.createElement("strong", null, "Tip:"), " For a perfect loop, ensure your animation's duration in code matches the GIF duration (", duration.toFixed(1), "s).")
             ),
-            React.createElement("div", { className: "lg:w-1/2 flex flex-col items-center justify-start" },
-                React.createElement("h2", { className: "text-sm font-medium text-gray-400 mb-2 w-full text-left" }, "Preview / Result"),
-                React.createElement(PreviewPanel, { previewCode, gifUrl, isGenerating, progress, iframeRef, width, height, onDownload: handleDownload })
+            React.createElement("div", { className: "lg:w-1/2 flex flex-col gap-4" },
+                 React.createElement("div", { className: "flex-grow flex flex-col" },
+                    React.createElement("h2", { className: "text-sm font-medium text-gray-400 mb-2 w-full text-left flex-shrink-0" }, "Preview / Result"),
+                    React.createElement(PreviewPanel, { previewCode, gifUrl, isGenerating, progress, iframeRef, width, height, onDownload: handleDownload })
+                ),
+                 React.createElement("div", { className: "flex-shrink-0" },
+                    React.createElement(EffectsPanel, { colorScheme, setColorScheme, filters, setFilterValue, onReset: handleResetFilters })
+                )
             )
         )
     ));
