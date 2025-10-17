@@ -1,0 +1,5 @@
+{
+  "name": "Code to GIF Animator",
+  "description": "An advanced tool to convert HTML and CSS animations directly into high-quality GIFs. Edit your code, preview the animation in real-time with visual effects, and generate a downloadable GIF with precise controls over duration and FPS.",
+  "requestFramePermissions": []
+}
