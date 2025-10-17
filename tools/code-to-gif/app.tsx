@@ -93,17 +93,16 @@ const CodeEditor: React.FC<{ code: string; setCode: (c: string) => void; }> = ({
     </div>
 );
 
-const PreviewPanel: React.FC<{
-    previewCode: string;
-    gifUrl: string | null;
-    isGenerating: boolean;
-    progress: string;
-    iframeRef: React.RefObject<HTMLIFrameElement>;
-    onDownload: () => void;
-    width: number;
+const PreviewPanel: React.FC<{ 
+    previewCode: string; 
+    gifUrl: string | null; 
+    isGenerating: boolean; 
+    progress: string; 
+    iframeRef: React.RefObject<HTMLIFrameElement>; 
+    onDownload: () => void; 
+    width: number; 
     height: number;
-}> = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, onDownload, width, height }) => (
-    <div className="relative w-full bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex items-center justify-center mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
+}> = ({ previewCode, gifUrl, isGenerating, progress, iframeRef, onDownload, width, height }) => (    <div className="relative w-full bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex items-center justify-center mx-auto" style={{ aspectRatio: `${width} / ${height}` }}>
         <iframe
             ref={iframeRef}
             srcDoc={previewCode}
