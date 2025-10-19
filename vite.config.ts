@@ -29,6 +29,10 @@ const globalPolyfill = `
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 3000 // Runs the server on localhost:3000
+    // Proxy object removed
+  },
   define: {
     global: 'globalThis',
   },

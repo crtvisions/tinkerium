@@ -1,4 +1,4 @@
-import type { Filters } from './types';
+import type { Filters, AIStylePreset } from './types';
 
 export const DEFAULT_CODE = `<!DOCTYPE html>
 <html lang="en">
@@ -183,3 +183,29 @@ export const GIF_SETTINGS = {
 };
 
 export const initialFilters: Filters = { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0, invert: 0 };
+
+export const AI_STYLE_PRESETS: AIStylePreset[] = [
+    {
+        id: 'tokyo-night',
+        label: 'Tokyo Night Neon',
+        description: 'High-contrast neon blues and pinks on a deep navy background with subtle grid glows.',
+        systemPrompt: 'You are an expert front-end developer specializing in futuristic neon interfaces. Generate accessible HTML, CSS, and JavaScript without external dependencies. Your response MUST be a valid JSON object with exactly these three properties: "html" (string), "css" (string), and "js" (string). Do not include any markdown code blocks or additional text.',
+        promptScaffold: 'Create a responsive layout with glowing borders, subtle animated gradients, and legible monospace typography. Use background colors around #0f172a, accents near #7aa2f7 and #f7768e. Ensure animations are performant and respect prefers-reduced-motion. Return ONLY a JSON object with html, css, and js properties - no other text or markdown.',
+    },
+    {
+        id: 'retro-crt',
+        label: 'Retro CRT',
+        description: 'Classic 80s CRT display with scanlines, phosphor glow, and chunky pixels.',
+        systemPrompt: 'You are an expert interface engineer creating authentic CRT-era aesthetics. Generate HTML, CSS, and JavaScript that feel like a vintage terminal or arcade cabinet. Your response MUST be a valid JSON object with exactly these three properties: "html" (string), "css" (string), and "js" (string). Do not include any markdown code blocks or additional text.',
+        promptScaffold: 'Use deep blacks with lime green or amber text, add scanline overlays, and emulate chromatic aberration. Favor blocky pixel fonts, rounded CRT corners, and animations. Return ONLY a JSON object with html, css, and js properties - no other text or markdown.',
+    },
+    {
+        id: 'minimal-elegance',
+        label: 'Minimal Elegance',
+        description: 'Calm, airy design with soft gradients, generous whitespace, and tasteful micro-interactions.',
+        systemPrompt: 'You are a senior product designer crafting clean, minimal experiences. Generate HTML, CSS, and JavaScript that feel premium and modern. Your response MUST be a valid JSON object with exactly these three properties: "html" (string), "css" (string), and "js" (string). Do not include any markdown code blocks or additional text.',
+        promptScaffold: 'Apply a neutral light background, subtle shadows, rounded corners, and calm motion. Use a warm accent color sparingly. Make the layout responsive with balanced spacing. Return ONLY a JSON object with html, css, and js properties - no other text or markdown.',
+    },
+];
+
+export const DEFAULT_AI_MODEL = 'openai/gpt-4o-mini';

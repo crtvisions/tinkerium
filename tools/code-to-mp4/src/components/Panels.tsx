@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { Dimensions, Filters } from '../types';
+import type { Dimensions, Filters, AIStylePreset, AIGeneratedCode } from '../types';
 import { Button, DownloadIcon, RotateCcwIcon } from './UILayout';
 
 interface CodeEditorProps {
@@ -294,7 +294,7 @@ export const EffectsPanel: React.FC<EffectsPanelProps> = ({ colorScheme, setColo
     </div>
 );
 
-type SettingsTab = 'export' | 'effects';
+type SettingsTab = 'export' | 'effects' | 'ai';
 
 interface TabbedSettingsPanelProps {
     cropTop: number;
@@ -316,14 +316,29 @@ interface TabbedSettingsPanelProps {
     filters: Filters;
     setFilterValue: (filter: keyof Omit<Filters, 'grayscale' | 'sepia' | 'invert'>, value: number) => void;
     onResetEffects: () => void;
+    aiStyles: AIStylePreset[];
+    selectedAIStyleId: string;
+    onSelectAIStyle: (id: string) => void;
+    aiPrompt: string;
+    onPromptChange: (value: string) => void;
+    aiTemperature: number;
+    onTemperatureChange: (value: number) => void;
+    onGenerateAI: () => void;
+    aiIsGenerating: boolean;
+    aiResult: AIGeneratedCode | null;
+    aiError: string | null;
+    onApplyAICode: () => void;
 }
 
 export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
     cropTop, setCropTop, cropBottom, setCropBottom, cropLeft, setCropLeft, cropRight, setCropRight,
     loopCount, setLoopCount, playbackSpeed, setPlaybackSpeed, backgroundColor, setBackgroundColor,
-    colorScheme, setColorScheme, filters, setFilterValue, onResetEffects
+    colorScheme, setColorScheme, filters, setFilterValue, onResetEffects,
+    aiStyles, selectedAIStyleId, onSelectAIStyle, aiPrompt, onPromptChange, aiTemperature,
+    onTemperatureChange, onGenerateAI, aiIsGenerating, aiResult, aiError, onApplyAICode
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('export');
+    const activeStyle = aiStyles.find(style => style.id === selectedAIStyleId) ?? aiStyles[0] ?? null;
 
     return (
         <div className="h-full flex flex-col bg-gray-900 relative">
@@ -351,6 +366,19 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                 >
                     Effects
                     {activeTab === 'effects' && (
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200"></span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('ai')}
+                    className={`relative flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 focus:outline-none ${
+                        activeTab === 'ai'
+                            ? 'bg-gray-800 text-gray-200'
+                            : 'text-gray-400 hover:bg-gray-800/50'
+                    }`}
+                >
+                    AI Assistant
+                    {activeTab === 'ai' && (
                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200"></span>
                     )}
                 </button>
@@ -428,6 +456,80 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                             <input type="range" id="saturate" min="0" max="200" value={filters.saturate} onChange={e => setFilterValue('saturate', parseInt(e.target.value))} className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
                         </div>
                     </>
+                )}
+                {activeTab === 'ai' && (
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="ai-style" className="block text-xs font-medium text-gray-400 mb-2">Style Preset</label>
+                            <select
+                                id="ai-style"
+                                value={selectedAIStyleId}
+                                onChange={(e) => onSelectAIStyle(e.target.value)}
+                                className="w-full bg-gray-800 text-gray-300 p-2 rounded border border-gray-600 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs"
+                            >
+                                {aiStyles.map(style => (
+                                    <option key={style.id} value={style.id}>{style.label}</option>
+                                ))}
+                            </select>
+                            {activeStyle && (
+                                <p className="mt-2 text-[11px] text-gray-400 leading-relaxed">{activeStyle.description}</p>
+                            )}
+                        </div>
+                        <div>
+                            <label htmlFor="ai-prompt" className="block text-xs font-medium text-gray-400 mb-2">Prompt</label>
+                            <textarea
+                                id="ai-prompt"
+                                value={aiPrompt}
+                                onChange={(e) => onPromptChange(e.target.value)}
+                                className="w-full min-h-[96px] bg-gray-800 text-gray-200 p-3 rounded border border-gray-600 focus:ring-2 focus:ring-orange-500 focus:outline-none text-sm resize-y"
+                                placeholder="Describe the animation or layout you want"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="ai-temperature" className="block text-xs font-medium text-gray-400 mb-2">Temperature: <span className="font-bold text-white">{aiTemperature.toFixed(2)}</span></label>
+                            <input
+                                type="range"
+                                id="ai-temperature"
+                                min="0"
+                                max="1"
+                                step="0.05"
+                                value={aiTemperature}
+                                onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                            />
+                        </div>
+                        {aiError && (
+                            <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/40 rounded px-3 py-2">
+                                {aiError}
+                            </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                            <Button
+                                onClick={onGenerateAI}
+                                disabled={aiIsGenerating || !aiPrompt.trim()}
+                                className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
+                            >
+                                {aiIsGenerating ? 'Generating…' : 'Generate'}
+                            </Button>
+                            <Button
+                                onClick={onApplyAICode}
+                                disabled={!aiResult}
+                                variant="secondary"
+                                className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
+                            >
+                                Apply to Editor
+                            </Button>
+                        </div>
+                        {aiResult && (
+                            <div className="bg-gray-800/80 border border-gray-700 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-semibold text-gray-300">Preview</span>
+                                    <span className="text-[11px] text-gray-500">{aiResult.combined ? 'Combined snippet' : 'Raw response'}</span>
+                                </div>
+                                <pre className="text-[11px] leading-relaxed text-gray-200 whitespace-pre-wrap break-words max-h-64 overflow-auto bg-gray-900/70 p-3 rounded">{aiResult.combined ?? aiResult.raw}</pre>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
         </div>

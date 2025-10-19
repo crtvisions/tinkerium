@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { DEFAULT_CODE, GIF_SETTINGS, initialFilters } from './constants';
-import type { Dimensions, Filters, EditorMode } from './types';
+import { DEFAULT_CODE, GIF_SETTINGS, initialFilters, AI_STYLE_PRESETS, DEFAULT_AI_MODEL } from './constants';
+import type { Dimensions, Filters, EditorMode, AIStylePreset, AIGeneratedCode } from './types';
 import { extractAnimationDuration, extractDimensions, injectStyleIntoCode, parseCombinedCode, buildCombinedCode } from './utils';
 import { Header } from './components/UILayout';
 import { CodeEditor, SplitCodeEditor, PreviewPanel, TabbedSettingsPanel } from './components/Panels';
@@ -114,6 +114,37 @@ const applyVhsOverlay = (ctx: CanvasRenderingContext2D, width: number, height: n
     ctx.restore();
 };
 
+const extractAIGeneratedCode = (content: string): AIGeneratedCode => {
+    const trimmed = content.trim();
+    const result: AIGeneratedCode = { raw: trimmed };
+    const blockRegex = /```(\w+)?\s*([\s\S]*?)```/g;
+    let match;
+    while ((match = blockRegex.exec(content)) !== null) {
+        const lang = (match[1] || '').toLowerCase();
+        const code = match[2].trim();
+        if ((lang === 'html' || lang === 'htm' || lang === 'xml') && !result.html) {
+            result.html = code;
+        } else if (lang === 'css' && !result.css) {
+            result.css = code;
+        } else if ((lang === 'javascript' || lang === 'js' || lang === 'ts' || lang === 'jsx' || lang === 'tsx') && !result.js) {
+            result.js = code;
+        } else if (!result.combined) {
+            result.combined = code;
+        }
+    }
+    if (!result.combined) {
+        if (result.html || result.css || result.js) {
+            const html = result.html ?? '';
+            const css = result.css ?? '';
+            const js = result.js ?? '';
+            result.combined = buildCombinedCode(html, css, js);
+        } else {
+            result.combined = trimmed;
+        }
+    }
+    return result;
+};
+
 function App() {
     // Editor mode and code states
     const [editorMode, setEditorMode] = useState<EditorMode>('combined');
@@ -136,6 +167,12 @@ function App() {
     const [colorScheme, setColorScheme] = useState('none');
     const [filters, setFilters] = useState<Filters>(initialFilters);
     const [previewCode, setPreviewCode] = useState(DEFAULT_CODE);
+    const [selectedAiStyleId, setSelectedAiStyleId] = useState<string>(AI_STYLE_PRESETS[0]?.id ?? '');
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiTemperature, setAiTemperature] = useState(0.6);
+    const [aiResult, setAiResult] = useState<AIGeneratedCode | null>(null);
+    const [aiIsGenerating, setAiIsGenerating] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
 
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const abortRef = useRef<boolean>(false);
@@ -165,6 +202,10 @@ function App() {
     }, []);
     
     const activeCode = useMemo(() => (editorMode === 'combined' ? code : buildCombinedCode(htmlCode, cssCode, jsCode)), [editorMode, code, htmlCode, cssCode, jsCode]);
+    const selectedAiStyle = useMemo<AIStylePreset | null>(() => {
+        const found = AI_STYLE_PRESETS.find(style => style.id === selectedAiStyleId);
+        return found ?? (AI_STYLE_PRESETS[0] ?? null);
+    }, [selectedAiStyleId]);
 
     useEffect(() => {
         const detectedDuration = extractAnimationDuration(activeCode);
@@ -318,6 +359,92 @@ function App() {
     useEffect(() => {
         updatePreview();
     }, [updatePreview]);
+
+    const handleSelectAiStyle = useCallback((id: string) => {
+        setSelectedAiStyleId(id);
+        setAiError(null);
+    }, []);
+
+    const handleAiPromptChange = useCallback((value: string) => {
+        if (aiError) {
+            setAiError(null);
+        }
+        setAiPrompt(value);
+    }, [aiError]);
+
+    const handleGenerateAi = useCallback(async () => {
+        if (!selectedAiStyle || !aiPrompt.trim() || aiIsGenerating) {
+            console.log('Skipping generation - missing style, prompt, or already generating');
+            return;
+        }
+        setAiIsGenerating(true);
+        setAiError(null);
+        setAiResult(null);
+        
+        console.log('Starting AI generation with style:', selectedAiStyle.id);
+        console.log('Prompt:', aiPrompt);
+        
+        try {
+            const userContent = selectedAiStyle.promptScaffold ? 
+                `${selectedAiStyle.promptScaffold}\n\n${aiPrompt}` : 
+                aiPrompt;
+                
+            console.log('Sending request to /api/generate-code');
+            const response = await fetch('/api/generate-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: DEFAULT_AI_MODEL,
+                    temperature: aiTemperature,
+                    messages: [
+                        { role: 'system', content: selectedAiStyle.systemPrompt },
+                        { role: 'user', content: userContent }
+                    ]
+                })
+            });
+            
+            console.log('Received response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (!response.ok) {
+                const message = typeof data?.error === 'string' && data.error.length > 0 ? 
+                    data.error : 'Failed to generate code';
+                console.error('API Error:', message, data);
+                throw new Error(message);
+            }
+            const content = data?.choices?.[0]?.message?.content ?? '';
+            if (!content.trim()) {
+                throw new Error('The AI response did not include any content');
+            }
+            const parsed = extractAIGeneratedCode(content);
+            setAiResult(parsed);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            setAiError(message);
+        } finally {
+            setAiIsGenerating(false);
+        }
+    }, [selectedAiStyle, aiPrompt, aiTemperature, aiIsGenerating]);
+
+    const handleApplyAiResult = useCallback(() => {
+        if (!aiResult) {
+            return;
+        }
+        let combined = aiResult.combined?.trim() ?? '';
+        if (!combined) {
+            combined = aiResult.raw;
+        }
+        setEditorMode('combined');
+        setCode(combined);
+        const parsed = parseCombinedCode(combined);
+        setHtmlCode(parsed.html);
+        setCssCode(parsed.css);
+        setJsCode(parsed.js);
+        setMp4Url(null);
+    }, [aiResult]);
 
 
     const handleDownload = () => {
@@ -902,6 +1029,18 @@ function App() {
                             filters={filters}
                             setFilterValue={setFilterValue}
                             onResetEffects={handleResetFilters}
+                            aiStyles={AI_STYLE_PRESETS}
+                            selectedAIStyleId={selectedAiStyleId}
+                            onSelectAIStyle={handleSelectAiStyle}
+                            aiPrompt={aiPrompt}
+                            onPromptChange={handleAiPromptChange}
+                            aiTemperature={aiTemperature}
+                            onTemperatureChange={setAiTemperature}
+                            onGenerateAI={handleGenerateAi}
+                            aiIsGenerating={aiIsGenerating}
+                            aiResult={aiResult}
+                            aiError={aiError}
+                            onApplyAICode={handleApplyAiResult}
                         />
                     </div>
                 </div>
