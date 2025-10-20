@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TINKERIUM - Main Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background: #000;
+            color: #0f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* CRT Effects */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .terminal {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            animation: flicker 0.15s infinite;
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.97; }
+        }
+        
+        .terminal-header {
+            border: 2px solid #0f0;
+            padding: 20px 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 0 10px #0f0;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .terminal-title {
+            font-size: clamp(48px, 8vw, 72px);
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #0f0;
+            margin-bottom: 10px;
+        }
+        
+        .terminal-subtitle {
+            font-size: clamp(18px, 3vw, 24px);
+            opacity: 0.8;
+            letter-spacing: 2px;
+        }
+        
+        .menu-container {
+            border: 2px solid #0f0;
+            padding: 40px;
+            box-shadow: 0 0 10px #0f0;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .menu-label {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #0f0;
+        }
+        
+        .menu-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .menu-item {
+            display: block;
+        }
+        
+        .menu-link {
+            display: block;
+            padding: 15px 25px;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            text-decoration: none;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .menu-link:hover,
+        .menu-link:focus {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 15px #0f0;
+            outline: none;
+        }
+        
+        .menu-link::before {
+            content: '► ';
+            margin-right: 10px;
+        }
+        
+        .footer-text {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 18px;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 640px) {
+            .terminal-header,
+            .menu-container {
+                padding: 20px;
+            }
+            
+            .menu-link {
+                font-size: 22px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">TINKERIUM</div>
+            <div class="terminal-subtitle">Creative Coding Tools v1.0</div>
+        </div>
+        
+        <div class="menu-container">
+            <div class="menu-label">► SELECT TOOL:</div>
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="/tools/code-to-mp4/" class="menu-link">Code to MP4</a>
+                </li>
+                <li class="menu-item">
+                    <a href="/tools/ascii-art/" class="menu-link">ASCII-fy</a>
+                </li>
+                <li class="menu-item">
+                    <a href="/tools/shader-playground/" class="menu-link">Shader Playground</a>
+                </li>
+                <li class="menu-item">
+                    <a href="/tools/wave-visualizer/" class="menu-link">Wave Visualizer</a>
+                </li>
+            </ul>
+            <div class="footer-text">SYSTEM READY_</div>
+        </div>
+    </div>
+</body>
+</html>
