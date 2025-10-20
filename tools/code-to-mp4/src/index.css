@@ -4,13 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './nav-fix.css';
+
 :root {
-  --background: #1a1b26;
-  --foreground: #a9b1d6;
-  --card-bg: #24283b;
-  --border: #414868;
-  --accent: #7aa2f7;
-  --hover-accent: #c0caf5;
+  --background: #000;
+  --foreground: #0f0;
+  --card-bg: #000;
+  --border: #0f0;
+  --border-dim: rgba(0, 255, 0, 0.3);
+  --accent: #0f0;
+  --hover-accent: #0f0;
+  --terminal-glow: 0 0 10px #0f0;
 }
 
 html, body, #root {
@@ -21,22 +25,150 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'VT323', monospace;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.6;
+  position: relative;
 }
 
-/* App chrome overrides for the theme without touching Tailwind classes directly */
-.app-bg { background-color: var(--background); }
-.app-card { background-color: var(--card-bg); border-color: var(--border); }
-.app-border { border-color: var(--border); }
-.app-accent { color: var(--accent); }
+/* Subtle CRT Scanline Effect */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.5;
+}
 
-/* Ensure main layout areas shrink properly to avoid page scroll in fullscreen */
+/* Subtle CRT Flicker */
+@keyframes flicker {
+  0% { opacity: 0.98; }
+  50% { opacity: 1; }
+  100% { opacity: 0.98; }
+}
+
+#root {
+  animation: flicker 0.2s infinite;
+}
+
+/* Layout improvements */
 .min-h-0 { min-height: 0 !important; }
 .max-h-full { max-height: 100% !important; }
 .overflow-hidden { overflow: hidden !important; }
 
-/* Custom range slider styling */
+/* Cleaner terminal styling with hierarchy */
+.app-bg { 
+  background-color: var(--background) !important; 
+}
+
+.app-card { 
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-dim) !important;
+  border-width: 1px !important;
+}
+
+.app-border { 
+  border-color: var(--border-dim) !important;
+  border-width: 1px !important;
+}
+
+.app-accent { 
+  color: var(--accent) !important;
+}
+
+/* Refined button styling - less aggressive */
+button:not(.tinkerium-nav-button), .btn {
+  background: transparent !important;
+  color: #0f0 !important;
+  border: 1px solid rgba(0, 255, 0, 0.5) !important;
+  font-family: 'VT323', monospace !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  transition: all 0.2s !important;
+  padding: 6px 16px !important;
+  font-size: 18px !important;
+}
+
+button:hover:not(:disabled):not(.tinkerium-nav-button), .btn:hover:not(:disabled) {
+  background: transparent !important;
+  color: #0f0 !important;
+  border-color: #0f0 !important;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.3) !important;
+}
+
+button:disabled:not(.tinkerium-nav-button), .btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+/* Primary action buttons - more visible */
+button.primary-action:not(.tinkerium-nav-button),
+button[class*="bg-orange"]:not(.tinkerium-nav-button),
+button[class*="bg-pink"]:not(.tinkerium-nav-button) {
+  background: #0f0 !important;
+  color: #000 !important;
+  border: 1px solid #0f0 !important;
+  font-weight: bold !important;
+}
+
+button.primary-action:hover:not(:disabled):not(.tinkerium-nav-button),
+button[class*="bg-orange"]:hover:not(:disabled):not(.tinkerium-nav-button),
+button[class*="bg-pink"]:hover:not(:disabled):not(.tinkerium-nav-button) {
+  box-shadow: 0 0 15px #0f0 !important;
+}
+
+/* Minimal input styling */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  background: #000 !important;
+  color: #0f0 !important;
+  border: 1px solid rgba(0, 255, 0, 0.3) !important;
+  font-family: 'VT323', monospace !important;
+  padding: 6px 10px !important;
+  font-size: 18px !important;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: #0f0 !important;
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.2) !important;
+}
+
+/* Cleaner text hierarchy */
+h1, h2, h3 {
+  color: #0f0 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  font-weight: normal !important;
+}
+
+h1 { font-size: 24px !important; }
+h2 { font-size: 20px !important; opacity: 0.9; }
+h3 { font-size: 18px !important; opacity: 0.8; }
+
+h4, h5, h6 {
+  color: #0f0 !important;
+  opacity: 0.7;
+  font-weight: normal !important;
+  text-transform: none !important;
+}
+
+/* Minimal range slider */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -49,37 +181,84 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: #f97316;
+  background: #0f0;
   cursor: pointer;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: #f97316;
+  background: #0f0;
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, #f97316 0%, #f97316 var(--value, 0%), #374151 var(--value, 0%), #374151 100%);
-  height: 8px;
-  border-radius: 4px;
+  background: rgba(0, 255, 0, 0.2);
+  height: 4px;
 }
 
 input[type="range"]::-moz-range-track {
-  background: #374151;
-  height: 8px;
-  border-radius: 4px;
+  background: rgba(0, 255, 0, 0.2);
+  height: 4px;
   border: none;
 }
 
 input[type="range"]::-moz-range-progress {
-  background: #f97316;
+  background: #0f0;
+  height: 4px;
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
   height: 8px;
-  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 0, 0.5);
+}
+
+/* Code editor - cleaner look */
+.cm-editor,
+.cm-content {
+  background: #000 !important;
+  color: #0f0 !important;
+  border: 1px solid rgba(0, 255, 0, 0.3) !important;
+}
+
+/* Refined Tailwind overrides with better hierarchy */
+.bg-gray-900, .bg-gray-950 { background-color: #000 !important; }
+.bg-gray-800 { background-color: rgba(0, 0, 0, 0.5) !important; }
+.bg-gray-700 { background-color: transparent !important; }
+
+.text-white { color: #0f0 !important; }
+.text-gray-300 { color: #0f0 !important; opacity: 0.9; }
+.text-gray-400 { color: #0f0 !important; opacity: 0.6; }
+.text-gray-500 { color: #0f0 !important; opacity: 0.5; }
+
+.border-gray-700, .border-gray-600 { border-color: rgba(0, 255, 0, 0.3) !important; }
+.border-gray-800 { border-color: rgba(0, 255, 0, 0.2) !important; }
+
+/* Dividers */
+.border-t, .border-b, .border-l, .border-r {
+  border-color: rgba(0, 255, 0, 0.2) !important;
+}
+
+/* Cards and panels - subtle */
+.rounded, .rounded-md, .rounded-lg {
+  border-radius: 0 !important;
+}
+
+/* Remove excessive shadows */
+.shadow, .shadow-lg, .shadow-xl {
+  box-shadow: none !important;
 }

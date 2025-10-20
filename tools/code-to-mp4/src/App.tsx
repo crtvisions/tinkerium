@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { DEFAULT_CODE, GIF_SETTINGS, initialFilters, AI_STYLE_PRESETS, DEFAULT_AI_MODEL } from './constants';
-import type { Dimensions, Filters, EditorMode, AIStylePreset, AIGeneratedCode } from './types';
+import { DEFAULT_CODE, GIF_SETTINGS, initialFilters } from './constants';
+import type { Dimensions, Filters, EditorMode, AIGeneratedCode } from './types';
 import { extractAnimationDuration, extractDimensions, injectStyleIntoCode, parseCombinedCode, buildCombinedCode } from './utils';
 import { Header } from './components/UILayout';
 import { CodeEditor, SplitCodeEditor, PreviewPanel, TabbedSettingsPanel } from './components/Panels';
+import { NavMenu } from '../../../shared/ui-components/NavMenu';
 // Removed mp4-muxer import - using MediaRecorder instead
 
 // Add type declarations for window properties
@@ -12,6 +13,7 @@ declare global {
         html2canvas: any;
         seekToTime?: (timeInSeconds: number) => void;
         animationStyleElement?: HTMLStyleElement;
+        updateFilterStyles?: (styleContent: string) => void;
     }
 }
 
@@ -167,9 +169,7 @@ function App() {
     const [colorScheme, setColorScheme] = useState('none');
     const [filters, setFilters] = useState<Filters>(initialFilters);
     const [previewCode, setPreviewCode] = useState(DEFAULT_CODE);
-    const [selectedAiStyleId, setSelectedAiStyleId] = useState<string>(AI_STYLE_PRESETS[0]?.id ?? '');
     const [aiPrompt, setAiPrompt] = useState('');
-    const [aiTemperature, setAiTemperature] = useState(0.6);
     const [aiResult, setAiResult] = useState<AIGeneratedCode | null>(null);
     const [aiIsGenerating, setAiIsGenerating] = useState(false);
     const [aiError, setAiError] = useState<string | null>(null);
@@ -202,10 +202,6 @@ function App() {
     }, []);
     
     const activeCode = useMemo(() => (editorMode === 'combined' ? code : buildCombinedCode(htmlCode, cssCode, jsCode)), [editorMode, code, htmlCode, cssCode, jsCode]);
-    const selectedAiStyle = useMemo<AIStylePreset | null>(() => {
-        const found = AI_STYLE_PRESETS.find(style => style.id === selectedAiStyleId);
-        return found ?? (AI_STYLE_PRESETS[0] ?? null);
-    }, [selectedAiStyleId]);
 
     useEffect(() => {
         const detectedDuration = extractAnimationDuration(activeCode);
@@ -352,18 +348,36 @@ function App() {
         return filterStyle + ' ' + backgroundStyle;
     }, [filterStyle, backgroundStyle]);
     
+    const isInitialLoad = useRef(true);
+    
     const updatePreview = useCallback(() => {
-        setPreviewCode(injectStyleIntoCode(activeCode, combinedStyle));
+        // On initial load, inject with animation restart
+        // On subsequent filter changes, use dynamic update to avoid restarting animations
+        if (isInitialLoad.current) {
+            setPreviewCode(injectStyleIntoCode(activeCode, combinedStyle, true));
+            isInitialLoad.current = false;
+        } else {
+            // Try to dynamically update styles if iframe is already loaded
+            if (iframeRef.current?.contentWindow?.updateFilterStyles) {
+                iframeRef.current.contentWindow.updateFilterStyles(combinedStyle);
+            } else {
+                // Fallback: reload without animation restart
+                setPreviewCode(injectStyleIntoCode(activeCode, combinedStyle, false));
+            }
+        }
     }, [activeCode, combinedStyle]);
 
+    // Track when activeCode changes vs when only filters change
+    const prevActiveCode = useRef(activeCode);
+    
     useEffect(() => {
+        // If the actual code changed (not just filters), mark as initial load
+        if (prevActiveCode.current !== activeCode) {
+            isInitialLoad.current = true;
+            prevActiveCode.current = activeCode;
+        }
         updatePreview();
-    }, [updatePreview]);
-
-    const handleSelectAiStyle = useCallback((id: string) => {
-        setSelectedAiStyleId(id);
-        setAiError(null);
-    }, []);
+    }, [updatePreview, activeCode]);
 
     const handleAiPromptChange = useCallback((value: string) => {
         if (aiError) {
@@ -373,22 +387,17 @@ function App() {
     }, [aiError]);
 
     const handleGenerateAi = useCallback(async () => {
-        if (!selectedAiStyle || !aiPrompt.trim() || aiIsGenerating) {
-            console.log('Skipping generation - missing style, prompt, or already generating');
+        if (!aiPrompt.trim() || aiIsGenerating) {
+            console.log('Skipping generation - missing prompt or already generating');
             return;
         }
         setAiIsGenerating(true);
         setAiError(null);
         setAiResult(null);
         
-        console.log('Starting AI generation with style:', selectedAiStyle.id);
-        console.log('Prompt:', aiPrompt);
+        console.log('Starting AI generation with prompt:', aiPrompt);
         
         try {
-            const userContent = selectedAiStyle.promptScaffold ? 
-                `${selectedAiStyle.promptScaffold}\n\n${aiPrompt}` : 
-                aiPrompt;
-                
             console.log('Sending request to /api/generate-code');
             const response = await fetch('/api/generate-code', {
                 method: 'POST',
@@ -396,12 +405,7 @@ function App() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: DEFAULT_AI_MODEL,
-                    temperature: aiTemperature,
-                    messages: [
-                        { role: 'system', content: selectedAiStyle.systemPrompt },
-                        { role: 'user', content: userContent }
-                    ]
+                    prompt: aiPrompt
                 })
             });
             
@@ -415,6 +419,19 @@ function App() {
                 console.error('API Error:', message, data);
                 throw new Error(message);
             }
+
+            if (typeof data?.html === 'string' && typeof data?.css === 'string' && typeof data?.js === 'string') {
+                const combined = buildCombinedCode(data.html, data.css, data.js);
+                setAiResult({
+                    html: data.html,
+                    css: data.css,
+                    js: data.js,
+                    combined,
+                    raw: combined
+                });
+                return;
+            }
+
             const content = data?.choices?.[0]?.message?.content ?? '';
             if (!content.trim()) {
                 throw new Error('The AI response did not include any content');
@@ -427,7 +444,7 @@ function App() {
         } finally {
             setAiIsGenerating(false);
         }
-    }, [selectedAiStyle, aiPrompt, aiTemperature, aiIsGenerating]);
+    }, [aiPrompt, aiIsGenerating]);
 
     const handleApplyAiResult = useCallback(() => {
         if (!aiResult) {
@@ -586,7 +603,8 @@ function App() {
         `;
         
         // Keep combinedStyle so preview and capture share the same CSS (canvas filters will enforce effects in final video)
-        const captureCode = injectStyleIntoCode(activeCode, combinedStyle) + captureScript;
+        // Don't restart animations during capture - animations are controlled by seekToTime
+        const captureCode = injectStyleIntoCode(activeCode, combinedStyle, false) + captureScript;
         
         console.log('Capture code:', captureCode.substring(0, 500) + '...');
         
@@ -950,8 +968,9 @@ function App() {
                 
                 if (!abortRef.current) {
                     try { if (timerRef.current !== null) clearTimeout(timerRef.current); } catch {}
-                    // Delay to allow encoder to process the frame
-                    timerRef.current = window.setTimeout(captureFrame, 50);
+                    // Use correct frame interval based on FPS setting
+                    const frameInterval = 1000 / fps;
+                    timerRef.current = window.setTimeout(captureFrame, frameInterval);
                 }
             } catch (error) {
                 console.error('Error capturing frame:', error);
@@ -967,12 +986,16 @@ function App() {
     }, [activeCode, combinedStyle, filters, colorScheme, backgroundColor, duration, fps, dimensions, isGenerating, cropTop, cropBottom, cropLeft, cropRight, bitrateMbps, keyInterval, fastMode, loopCount, playbackSpeed]);
 
     return (
-        <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+        <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col" style={{ position: 'relative' }}>
+            <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 999999, pointerEvents: 'none' }}>
+                <div style={{ pointerEvents: 'auto' }}>
+                    <NavMenu />
+                </div>
+            </div>
             <Header 
                 title="editor.js"
                 editorMode={editorMode}
                 onEditorModeChange={(mode) => setEditorMode(mode as EditorMode)}
-                onPreview={() => {}}
                 onGenerate={handleGenerateMp4}
                 onClear={handleClear}
                 isGenerating={isGenerating}
@@ -1029,13 +1052,8 @@ function App() {
                             filters={filters}
                             setFilterValue={setFilterValue}
                             onResetEffects={handleResetFilters}
-                            aiStyles={AI_STYLE_PRESETS}
-                            selectedAIStyleId={selectedAiStyleId}
-                            onSelectAIStyle={handleSelectAiStyle}
                             aiPrompt={aiPrompt}
                             onPromptChange={handleAiPromptChange}
-                            aiTemperature={aiTemperature}
-                            onTemperatureChange={setAiTemperature}
                             onGenerateAI={handleGenerateAi}
                             aiIsGenerating={aiIsGenerating}
                             aiResult={aiResult}

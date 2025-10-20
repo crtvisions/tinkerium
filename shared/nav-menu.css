@@ -1,0 +1,79 @@
+/* Global Navigation Menu Styles */
+.nav-dropdown {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 99999;
+}
+
+.nav-toggle {
+    background: rgba(0, 0, 0, 0.9);
+    border: none;
+    color: #0f0;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+    max-width: 50px;
+    max-height: 50px;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: none;
+    font-family: 'VT323', monospace;
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    border-radius: 4px;
+}
+
+.nav-toggle:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 20px #0f0;
+}
+
+.nav-menu {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #0f0;
+    box-shadow: 0 0 20px #0f0;
+    min-width: 250px;
+    z-index: 100000;
+}
+
+.nav-menu.active {
+    display: block;
+}
+
+.nav-link {
+    display: block;
+    padding: 15px 20px;
+    color: #0f0;
+    text-decoration: none;
+    font-size: 20px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    transition: all 0.2s;
+    text-shadow: 0 0 5px #0f0;
+    font-family: 'VT323', monospace;
+}
+
+.nav-link:last-child {
+    border-bottom: none;
+}
+
+.nav-link:hover {
+    background: #0f0;
+    color: #000;
+    padding-left: 30px;
+}

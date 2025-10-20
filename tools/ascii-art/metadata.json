@@ -1,0 +1,5 @@
+{
+  "name": "ASCII-fy",
+  "description": "Transform images into retro ASCII art with full control over character sets and density. Features an authentic MS-DOS terminal interface.",
+  "requestFramePermissions": []
+}

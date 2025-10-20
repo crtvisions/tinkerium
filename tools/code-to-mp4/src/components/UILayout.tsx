@@ -1,13 +1,13 @@
 import React from 'react';
 
 // --- Icon Components ---
-const Icon: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+const Icon: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties }> = ({ children, className, style }) => (
+    <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         {children}
     </svg>
 );
 
-export const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => <Icon className={className}><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></Icon>;
+export const BackArrowIcon: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => <Icon className={className} style={style}><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></Icon>;
 export const PlayIcon: React.FC<{ className?: string }> = ({ className }) => <Icon className={className}><path d="M8 5v14l11-7z" /></Icon>;
 export const MovieIcon: React.FC<{ className?: string }> = ({ className }) => <Icon className={className}><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" /></Icon>;
 export const DownloadIcon: React.FC<{ className?: string }> = ({ className }) => <Icon className={className}><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z" /></Icon>;
@@ -25,13 +25,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', className, ...props }) => {
-    const baseClasses = "px-4 py-2 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
-    const variantClasses = {
-        primary: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-500 text-white',
-        secondary: 'bg-gray-700 hover:bg-gray-600 focus:ring-gray-500 text-gray-200'
-    };
+    const baseClasses = "px-4 py-2 focus:outline-none transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    const variantClass = variant === 'primary' ? 'primary-action' : '';
     return (
-        <button className={`${baseClasses} ${variantClasses[variant]} ${className || ''}`} {...props}>
+        <button 
+            className={`${baseClasses} ${variantClass} ${className || ''}`}
+            {...props}
+        >
             {children}
         </button>
     );
@@ -42,7 +42,6 @@ interface HeaderProps {
     title?: string;
     editorMode?: string;
     onEditorModeChange?: (mode: string) => void;
-    onPreview?: () => void;
     onGenerate?: () => void;
     onClear?: () => void;
     isGenerating?: boolean;
@@ -50,12 +49,13 @@ interface HeaderProps {
 
 const menuStyles = `
 .menu {
-  font-size: 14px;
-  color: #000000;
+  font-size: 16px;
+  color: #0f0;
   list-style: none;
   position: relative;
   margin: 0;
   padding: 0;
+  font-family: 'VT323', monospace;
 }
 
 .menu .item {
@@ -68,25 +68,29 @@ const menuStyles = `
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 4px 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   background: none;
   border: none;
-  color: #9ca3af;
-  font-size: 13px;
+  color: #0f0;
+  font-size: 16px;
+  font-family: 'VT323', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
 }
 
 .menu .link:hover {
-  color: #f97316;
+  opacity: 1;
 }
 
 .menu .link svg {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   transition: transform 0.2s ease;
   fill: currentColor;
+  opacity: 0.5;
 }
 
 .menu .item:hover .link svg {
@@ -97,22 +101,19 @@ const menuStyles = `
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 120px;
-  background: #1f2937;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  min-width: 140px;
+  background: #000;
   opacity: 0;
   visibility: hidden;
   transform: translateY(0);
   transition: all 0.2s ease;
   z-index: 1000;
   pointer-events: none;
-  border: 1px solid #374151;
-  padding: 8px 0;
+  border: 1px solid rgba(0, 255, 0, 0.5);
+  padding: 4px 0;
   margin-top: 8px;
 }
 
-/* Add a pseudo-element to create an invisible hit area above the submenu */
 .menu .submenu::before {
   content: '';
   position: absolute;
@@ -133,9 +134,10 @@ const menuStyles = `
 
 .submenu-link {
   display: block;
-  padding: 8px 16px;
-  color: #e5e7eb;
-  font-size: 13px;
+  padding: 6px 14px;
+  color: #0f0;
+  font-size: 16px;
+  font-family: 'VT323', monospace;
   transition: all 0.15s ease;
   cursor: pointer;
   text-align: left;
@@ -144,19 +146,20 @@ const menuStyles = `
   border: none;
   margin: 0;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
 }
 
 .submenu-link:hover {
-  color: #f97316;
-  background-color: rgba(249, 115, 22, 0.1);
-}
-`;
+  opacity: 1;
+  background-color: rgba(0, 255, 0, 0.1);
+}`;
 
 export const Header: React.FC<HeaderProps> = ({ 
     title = 'editor.js',
     editorMode = 'combined',
     onEditorModeChange,
-    onPreview,
     onGenerate,
     onClear,
     isGenerating = false
@@ -172,45 +175,32 @@ export const Header: React.FC<HeaderProps> = ({
     }, []);
 
     return (
-    <header className="w-full px-6 py-3 bg-gray-950 sticky top-0 z-10">
+    <header className="w-full px-6 py-3 sticky top-0" style={{ background: '#000', borderBottom: '1px solid rgba(0, 255, 0, 0.3)', zIndex: 1, paddingLeft: '90px' }}>
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (window.history.length > 1) {
-                            window.history.back();
-                        } else {
-                            window.location.href = '/';
-                        }
-                    }}
-                    className="p-1 rounded hover:bg-gray-800 transition-colors"
-                >
-                    <BackArrowIcon className="w-5 h-5 text-gray-400 hover:text-gray-200" />
-                </button>
-                <h1 className="text-sm font-medium text-gray-300">{title}</h1>
+                <h1 style={{ fontSize: '18px', color: '#0f0', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'normal', opacity: 0.9 }}>{title}</h1>
                 {onEditorModeChange && (
-                    <div className="ml-4 pl-4 border-l border-gray-700 h-full flex items-center">
+                    <div className="ml-4 pl-4 h-full flex items-center" style={{ borderLeft: '1px solid rgba(0, 255, 0, 0.2)' }}>
                         <div className="menu">
                             <div className="item">
                                 <button className="link">
-                                    <span className="text-xs">Editor Mode: <span className="text-orange-500">{editorMode === 'combined' ? 'Combined' : 'Split'}</span></span>
+                                    <span style={{ fontSize: '16px', opacity: 0.8 }}>Mode: <span style={{ opacity: 1 }}>{editorMode === 'combined' ? 'Combined' : 'Split'}</span></span>
                                     <svg viewBox="0 0 360 360">
                                         <path d="M325.607,79.393c-5.857-5.857-15.355-5.858-21.213,0.001l-139.39,139.393L25.607,79.393c-5.857-5.857-15.355-5.858-21.213,0.001c-5.858,5.858-5.858,15.355,0,21.213l150.004,150c2.813,2.813,6.628,4.393,10.606,4.393s7.794-1.581,10.606-4.394l149.996-150C331.465,94.749,331.465,85.251,325.607,79.393z" />
                                     </svg>
                                 </button>
                                 <div className="submenu">
                                     <button 
-                                        className={`submenu-link ${editorMode === 'combined' ? 'text-orange-500' : ''}`}
+                                        className="submenu-link"
                                         onClick={() => onEditorModeChange('combined')}
                                     >
-                                        Combined
+                                        {editorMode === 'combined' ? '▸ ' : '  '}Combined
                                     </button>
                                     <button 
-                                        className={`submenu-link ${editorMode === 'split' ? 'text-orange-500' : ''}`}
+                                        className="submenu-link"
                                         onClick={() => onEditorModeChange('split')}
                                     >
-                                        Split
+                                        {editorMode === 'split' ? '▸ ' : '  '}Split
                                     </button>
                                 </div>
                             </div>
@@ -222,7 +212,8 @@ export const Header: React.FC<HeaderProps> = ({
                 {onClear && (
                     <button 
                         onClick={onClear}
-                        className="text-xs text-gray-400 hover:text-gray-200 transition-colors px-3 py-1"
+                        className="px-3 py-1"
+                        style={{ fontSize: '16px', opacity: 0.7 }}
                     >
                         Clear
                     </button>
@@ -231,9 +222,10 @@ export const Header: React.FC<HeaderProps> = ({
                     <button 
                         onClick={onGenerate}
                         disabled={isGenerating}
-                        className="text-xs bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500 disabled:opacity-50 text-white px-4 py-1.5 rounded font-semibold transition-colors"
+                        className="px-4 py-1.5 font-semibold primary-action"
+                        style={{ fontSize: '16px' }}
                     >
-                        {isGenerating ? 'Generating...' : 'Generate'}
+                        {isGenerating ? 'Generating...' : '▸ Generate'}
                     </button>
                 )}
             </div>

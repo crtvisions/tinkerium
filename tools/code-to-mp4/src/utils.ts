@@ -44,11 +44,25 @@ export function extractDimensions(code: string): Dimensions | null {
         return { width: parseInt(widthMatch[1], 10), height: parseInt(heightMatch[1], 10) };
     }
 
+    // Detect explicit renderer size in Three.js scenes e.g. renderer.setSize(800, 600)
+    const rendererSizeRegex = /setSize\(\s*(\d+)\s*,\s*(\d+)\s*\)/;
+    match = code.match(rendererSizeRegex);
+    if (match && match[1] && match[2]) {
+        return { width: parseInt(match[1], 10), height: parseInt(match[2], 10) };
+    }
+
+    // Detect canvas width/height attributes set via HTML (e.g. <canvas width="800" height="600">)
+    const canvasAttrRegex = /<canvas[^>]*?width\s*=\s*"(\d+)"[^>]*?height\s*=\s*"(\d+)"/i;
+    match = code.match(canvasAttrRegex);
+    if (match && match[1] && match[2]) {
+        return { width: parseInt(match[1], 10), height: parseInt(match[2], 10) };
+    }
+
     return null;
 }
 
-export function injectStyleIntoCode(htmlCode: string, style: string): string {
-    const animationRestartScript = `
+export function injectStyleIntoCode(htmlCode: string, style: string, includeAnimationRestart: boolean = false): string {
+    const animationRestartScript = includeAnimationRestart ? `
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Force restart all animations
@@ -62,17 +76,33 @@ export function injectStyleIntoCode(htmlCode: string, style: string): string {
                 }
             });
         });
-    </script>`;
+    </script>` : '';
+    
+    // Create a unique ID for the style element to enable dynamic updates
+    const styleId = 'dynamic-filter-styles';
     
     // Check if style contains full CSS (like VHS effect) or just filter properties
     const styleTag = style.includes('@keyframes') || style.includes('body {')
-        ? `<style>${style}</style>`  // Full CSS block
-        : `<style>body { ${style} }</style>`;  // Simple filter properties
+        ? `<style id="${styleId}">${style}</style>`  // Full CSS block
+        : `<style id="${styleId}">body { ${style} }</style>`;  // Simple filter properties
+    
+    // Add a script to dynamically update styles without reloading the page
+    const dynamicStyleScript = `
+    <script>
+        // Function to update styles without restarting animations
+        window.updateFilterStyles = function(styleContent) {
+            const styleElement = document.getElementById('${styleId}');
+            if (styleElement) {
+                const isFullCss = styleContent.includes('@keyframes') || styleContent.includes('body {');
+                styleElement.textContent = isFullCss ? styleContent : 'body { ' + styleContent + ' }';
+            }
+        };
+    </script>`;
         
     if (htmlCode.includes('</head>')) {
-        return htmlCode.replace('</head>', `${styleTag}${animationRestartScript}</head>`);
+        return htmlCode.replace('</head>', `${styleTag}${dynamicStyleScript}${animationRestartScript}</head>`);
     }
-    return `<html><head>${styleTag}${animationRestartScript}</head><body>${htmlCode}</body></html>`;
+    return `<html><head>${styleTag}${dynamicStyleScript}${animationRestartScript}</head><body>${htmlCode}</body></html>`;
 }
 
 export function parseCombinedCode(combinedCode: string): { html: string; css: string; js: string } {

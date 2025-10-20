@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { Dimensions, Filters, AIStylePreset, AIGeneratedCode } from '../types';
+import type { Dimensions, Filters, AIGeneratedCode } from '../types';
 import { Button, DownloadIcon, RotateCcwIcon } from './UILayout';
 
 interface CodeEditorProps {
@@ -316,13 +316,8 @@ interface TabbedSettingsPanelProps {
     filters: Filters;
     setFilterValue: (filter: keyof Omit<Filters, 'grayscale' | 'sepia' | 'invert'>, value: number) => void;
     onResetEffects: () => void;
-    aiStyles: AIStylePreset[];
-    selectedAIStyleId: string;
-    onSelectAIStyle: (id: string) => void;
     aiPrompt: string;
     onPromptChange: (value: string) => void;
-    aiTemperature: number;
-    onTemperatureChange: (value: number) => void;
     onGenerateAI: () => void;
     aiIsGenerating: boolean;
     aiResult: AIGeneratedCode | null;
@@ -334,11 +329,9 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
     cropTop, setCropTop, cropBottom, setCropBottom, cropLeft, setCropLeft, cropRight, setCropRight,
     loopCount, setLoopCount, playbackSpeed, setPlaybackSpeed, backgroundColor, setBackgroundColor,
     colorScheme, setColorScheme, filters, setFilterValue, onResetEffects,
-    aiStyles, selectedAIStyleId, onSelectAIStyle, aiPrompt, onPromptChange, aiTemperature,
-    onTemperatureChange, onGenerateAI, aiIsGenerating, aiResult, aiError, onApplyAICode
+    aiPrompt, onPromptChange, onGenerateAI, aiIsGenerating, aiResult, aiError, onApplyAICode
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('export');
-    const activeStyle = aiStyles.find(style => style.id === selectedAIStyleId) ?? aiStyles[0] ?? null;
 
     return (
         <div className="h-full flex flex-col bg-gray-900 relative">
@@ -352,9 +345,6 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                     }`}
                 >
                     Export
-                    {activeTab === 'export' && (
-                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200"></span>
-                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('effects')}
@@ -365,9 +355,6 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                     }`}
                 >
                     Effects
-                    {activeTab === 'effects' && (
-                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200"></span>
-                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('ai')}
@@ -378,9 +365,6 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                     }`}
                 >
                     AI Assistant
-                    {activeTab === 'ai' && (
-                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200"></span>
-                    )}
                 </button>
             </div>
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
@@ -459,43 +443,20 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                 )}
                 {activeTab === 'ai' && (
                     <div className="space-y-4">
-                        <div>
-                            <label htmlFor="ai-style" className="block text-xs font-medium text-gray-400 mb-2">Style Preset</label>
-                            <select
-                                id="ai-style"
-                                value={selectedAIStyleId}
-                                onChange={(e) => onSelectAIStyle(e.target.value)}
-                                className="w-full bg-gray-800 text-gray-300 p-2 rounded border border-gray-600 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs"
-                            >
-                                {aiStyles.map(style => (
-                                    <option key={style.id} value={style.id}>{style.label}</option>
-                                ))}
-                            </select>
-                            {activeStyle && (
-                                <p className="mt-2 text-[11px] text-gray-400 leading-relaxed">{activeStyle.description}</p>
-                            )}
+                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                            <p className="text-xs text-blue-200 leading-relaxed">
+                                <strong>✨ AI Animation Generator</strong><br/>
+                                Describe what you want and the AI will create a working animation with HTML, CSS, and JavaScript.
+                            </p>
                         </div>
                         <div>
-                            <label htmlFor="ai-prompt" className="block text-xs font-medium text-gray-400 mb-2">Prompt</label>
+                            <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-300 mb-2">What do you want to animate?</label>
                             <textarea
                                 id="ai-prompt"
                                 value={aiPrompt}
                                 onChange={(e) => onPromptChange(e.target.value)}
-                                className="w-full min-h-[96px] bg-gray-800 text-gray-200 p-3 rounded border border-gray-600 focus:ring-2 focus:ring-orange-500 focus:outline-none text-sm resize-y"
-                                placeholder="Describe the animation or layout you want"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="ai-temperature" className="block text-xs font-medium text-gray-400 mb-2">Temperature: <span className="font-bold text-white">{aiTemperature.toFixed(2)}</span></label>
-                            <input
-                                type="range"
-                                id="ai-temperature"
-                                min="0"
-                                max="1"
-                                step="0.05"
-                                value={aiTemperature}
-                                onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                                className="w-full min-h-[120px] bg-gray-800 text-gray-200 p-3 rounded border border-gray-600 focus:ring-2 focus:ring-orange-500 focus:outline-none text-sm resize-y"
+                                placeholder='Example: "A cat in a hat retro style" or "Floating geometric shapes with neon colors"'
                             />
                         </div>
                         {aiError && (
@@ -507,26 +468,30 @@ export const TabbedSettingsPanel: React.FC<TabbedSettingsPanelProps> = ({
                             <Button
                                 onClick={onGenerateAI}
                                 disabled={aiIsGenerating || !aiPrompt.trim()}
-                                className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
+                                className="px-5 py-2.5 text-sm font-semibold uppercase tracking-wide flex-1"
                             >
-                                {aiIsGenerating ? 'Generating…' : 'Generate'}
+                                {aiIsGenerating ? '⚡ Generating…' : '✨ Generate Animation'}
                             </Button>
-                            <Button
-                                onClick={onApplyAICode}
-                                disabled={!aiResult}
-                                variant="secondary"
-                                className="px-4 py-2 text-xs font-semibold uppercase tracking-wide"
-                            >
-                                Apply to Editor
-                            </Button>
+                            {aiResult && (
+                                <Button
+                                    onClick={onApplyAICode}
+                                    variant="secondary"
+                                    className="px-5 py-2.5 text-sm font-semibold uppercase tracking-wide"
+                                >
+                                    Apply
+                                </Button>
+                            )}
                         </div>
                         {aiResult && (
-                            <div className="bg-gray-800/80 border border-gray-700 rounded-lg p-3">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-semibold text-gray-300">Preview</span>
-                                    <span className="text-[11px] text-gray-500">{aiResult.combined ? 'Combined snippet' : 'Raw response'}</span>
+                            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs font-semibold text-green-300">✓ Animation Generated</span>
                                 </div>
-                                <pre className="text-[11px] leading-relaxed text-gray-200 whitespace-pre-wrap break-words max-h-64 overflow-auto bg-gray-900/70 p-3 rounded">{aiResult.combined ?? aiResult.raw}</pre>
+                                <p className="text-[11px] text-gray-400 mb-2">Preview the animation above, then click "Apply" to load it into the editor.</p>
+                                <details className="text-[11px] text-gray-400">
+                                    <summary className="cursor-pointer hover:text-gray-300">View generated code</summary>
+                                    <pre className="mt-2 text-[10px] leading-relaxed text-gray-300 whitespace-pre-wrap break-words max-h-48 overflow-auto bg-gray-900/70 p-2 rounded">{aiResult.combined ?? aiResult.raw}</pre>
+                                </details>
                             </div>
                         )}
                     </div>

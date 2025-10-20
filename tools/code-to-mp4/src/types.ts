@@ -14,15 +14,10 @@ export interface Filters {
 
 export type EditorMode = 'combined' | 'split';
 
-export interface AIStylePreset {
-  id: string;
-  label: string;
-  description: string;
-  systemPrompt: string;
-  promptScaffold?: string;
-}
+export type AIOutputMode = 'animation' | 'text';
 
 export interface AIGeneratedCode {
+  mode?: AIOutputMode;
   html?: string;
   css?: string;
   js?: string;

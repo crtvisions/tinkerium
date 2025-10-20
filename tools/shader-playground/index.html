@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shader Playground - TINKERIUM</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Orbitron:wght@400;700;900&family=Bungee&family=Monoton&family=Russo+One&family=Rajdhani:wght@400;700&family=Audiowide&family=Righteous&family=Black+Ops+One&family=Rubik+Mono+One&family=Iceland&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/shared/nav-menu.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+</head>
+<body>
+    <!-- Navigation menu injected by /shared/nav-menu.js -->
+    
+    <div class="container">
+        <div class="header">
+            <div class="title">SHADER PLAYGROUND</div>
+            <div class="controls">
+                <button class="btn" id="randomBtn">🎲 RANDOM</button>
+                <button class="btn" id="viewCodeBtn">📄 CODE</button>
+                <button class="btn" id="exportBtn">💾 EXPORT</button>
+                <button class="btn" id="recordBtn">🎬 RECORD</button>
+            </div>
+        </div>
+        
+        <!-- Export Modal -->
+        <div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 2000; align-items: center; justify-content: center;">
+            <div style="background: #000; border: 3px solid #0f0; padding: 30px; max-width: 500px; box-shadow: 0 0 30px #0f0;">
+                <div style="font-size: 28px; text-shadow: 0 0 10px #0f0; margin-bottom: 20px; letter-spacing: 3px;">EXPORT OPTIONS</div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" id="exportPNG" style="width: 100%; margin-bottom: 10px;">📷 SAVE PNG (Current Frame)</button>
+                    <button class="btn" id="exportGIF" style="width: 100%; margin-bottom: 10px;">🎞️ CREATE GIF (2s loop, 480p)</button>
+                    <button class="btn" id="exportVideo" style="width: 100%; margin-bottom: 10px;">🎬 RECORD VIDEO (60fps, Full Res)</button>
+                </div>
+                <button class="btn" id="closeExportBtn" style="width: 100%;">✖ CLOSE</button>
+            </div>
+        </div>
+        
+        <!-- Recording Indicator -->
+        <div id="recordingIndicator" style="display: none; position: fixed; top: 80px; left: 20px; background: rgba(255, 0, 0, 0.9); border: 2px solid #f00; padding: 15px 25px; z-index: 2001; box-shadow: 0 0 20px #f00; font-size: 20px; letter-spacing: 2px; animation: pulse 1s infinite;">
+            ● REC <span id="recordTime">0:00</span>
+        </div>
+        
+        <div class="editor-panel">
+            <div class="panel-header">► VISUAL EDITOR</div>
+            <div class="editor-container" id="editorContainer">
+                <!-- Presets -->
+                <div class="section">
+                    <div class="section-title">PRESETS</div>
+                    <div class="section-content">
+                    <div class="preset-grid">
+                        <button class="preset-item" data-preset="crt">🎮 RETRO</button>
+                        <button class="preset-item" data-preset="plasma">🔮 KALEIDOSCOPE</button>
+                        <button class="preset-item" data-preset="matrix">🌈 CHROMATIC</button>
+                        <button class="preset-item" data-preset="tunnel">💥 SUPERNOVA</button>
+                        <button class="preset-item" data-preset="glitch">🌀 VORTEX</button>
+                        <button class="preset-item" data-preset="nebula">🔄 NEGATIVE</button>
+                        <button class="preset-item" data-preset="fire">🔥 THERMAL</button>
+                        <button class="preset-item" data-preset="kaleid">🪞 MIRROR</button>
+                        <button class="preset-item" data-preset="waves">📺 SCANLINE</button>
+                        <button class="preset-item" data-preset="neon">✨ NEON</button>
+                        <button class="preset-item" data-preset="pixel">🟩 PIXELSTORM</button>
+                        <button class="preset-item" data-preset="water">🌊 UNDERWATER</button>
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Base Colors -->
+                <div class="section">
+                    <div class="section-title">COLORS</div>
+                    <div class="section-content">
+                    <div class="param-group">
+                        <label class="param-label">Primary Color</label>
+                        <input type="color" id="color1" class="color-input" value="#00ff00">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Secondary Color</label>
+                        <input type="color" id="color2" class="color-input" value="#0000ff">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Background Color</label>
+                        <input type="color" id="bgColor" class="color-input" value="#000000">
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Pattern -->
+                <div class="section">
+                    <div class="section-title">PATTERN</div>
+                    <div class="section-content">
+                    <div class="param-group">
+                        <label class="param-label">Type</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <button class="toggle-btn active" data-pattern="waves">WAVES</button>
+                            <button class="toggle-btn" data-pattern="circles">CIRCLES</button>
+                            <button class="toggle-btn" data-pattern="grid">GRID</button>
+                            <button class="toggle-btn" data-pattern="spiral">SPIRAL</button>
+                            <button class="toggle-btn" data-pattern="dots">DOTS</button>
+                            <button class="toggle-btn" data-pattern="stripes">STRIPES</button>
+                            <button class="toggle-btn" data-pattern="radial">RADIAL</button>
+                            <button class="toggle-btn" data-pattern="voronoi">VORONOI</button>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Scale: <span class="param-value" id="scaleValue">5.0</span></label>
+                        <input type="range" class="slider" id="scale" min="1" max="20" step="0.5" value="5" style="width: 100%;">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Speed: <span class="param-value" id="speedValue">1.0</span></label>
+                        <input type="range" class="slider" id="speed" min="0" max="5" step="0.1" value="1" style="width: 100%;">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Complexity: <span class="param-value" id="complexityValue">3</span></label>
+                        <input type="range" class="slider" id="complexity" min="1" max="8" step="1" value="3" style="width: 100%;">
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Animated Text -->
+                <div class="section">
+                    <div class="section-title">ANIMATED TEXT</div>
+                    <div class="section-content">
+                    <div class="param-group">
+                        <label class="param-label">Text</label>
+                        <input type="text" id="animText" value="SHADER" style="width: 100%; padding: 8px; background: transparent; border: 2px solid #0f0; color: #0f0; font-family: 'VT323', monospace; font-size: 18px;">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Font</label>
+                        <select id="textFont" style="width: 100%; padding: 8px; background: #000; border: 2px solid #0f0; color: #0f0; font-family: 'VT323', monospace; font-size: 18px; cursor: pointer;">
+                            <option value="VT323">VT323 Terminal</option>
+                            <option value="Press Start 2P">Press Start (8-bit)</option>
+                            <option value="Orbitron">Orbitron (Sci-Fi)</option>
+                            <option value="Bungee">Bungee (Pop)</option>
+                            <option value="Monoton">Monoton (Neon)</option>
+                            <option value="Russo One">Russo One (Bold)</option>
+                            <option value="Audiowide">Audiowide (Futuristic)</option>
+                            <option value="Righteous">Righteous (Retro Wave)</option>
+                            <option value="Black Ops One">Black Ops (Military)</option>
+                            <option value="Rubik Mono One">Rubik Mono (Chunky)</option>
+                            <option value="Iceland">Iceland (Angular)</option>
+                            <option value="Rajdhani">Rajdhani (Tech)</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Font Size: <span class="param-value" id="fontSizeValue">80</span></label>
+                        <input type="range" class="slider" id="fontSize" min="20" max="200" step="10" value="80" style="width: 100%;">
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Font Weight</label>
+                        <div>
+                            <button class="toggle-btn" data-weight="normal">NORMAL</button>
+                            <button class="toggle-btn active" data-weight="bold">BOLD</button>
+                            <button class="toggle-btn" data-weight="900">HEAVY</button>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Text Color</label>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="toggle-btn active" data-color="gradient">GRADIENT</button>
+                            <button class="toggle-btn" data-color="solid">SOLID</button>
+                        </div>
+                        <input type="color" id="textColor" class="color-input" value="#00ff00" style="margin-top: 8px; display: none;">
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="textOutline" class="effect-checkbox" checked>
+                        <label for="textOutline" class="effect-label">Outline</label>
+                        <div class="effect-params active" id="outlineParams">
+                            <label class="param-label">Width: <span class="param-value" id="outlineWidthValue">3</span></label>
+                            <input type="range" class="slider" id="outlineWidth" min="0" max="10" step="1" value="3" style="width: 100%;">
+                            <label class="param-label" style="margin-top: 8px;">Color</label>
+                            <input type="color" id="outlineColor" class="color-input" value="#000000">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="textShadow" class="effect-checkbox">
+                        <label for="textShadow" class="effect-label">Shadow</label>
+                        <div class="effect-params" id="shadowParams">
+                            <label class="param-label">Blur: <span class="param-value" id="shadowBlurValue">10</span></label>
+                            <input type="range" class="slider" id="shadowBlur" min="0" max="30" step="2" value="10" style="width: 100%;">
+                            <label class="param-label" style="margin-top: 8px;">Color</label>
+                            <input type="color" id="shadowColor" class="color-input" value="#00ff00">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Distortion: <span class="param-value" id="textDistortValue">0.5</span></label>
+                        <input type="range" class="slider" id="textDistort" min="0" max="2" step="0.1" value="0.5" style="width: 100%;">
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="textEnabled" class="effect-checkbox" checked>
+                        <label for="textEnabled" class="effect-label">Show Text</label>
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Animation Patterns -->
+                <div class="section">
+                    <div class="section-title">ANIMATIONS</div>
+                    <div class="section-content">
+                    <div class="param-group">
+                        <label class="param-label">Pattern</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <button class="toggle-btn" data-anim="spiral">SPIRAL</button>
+                            <button class="toggle-btn" data-anim="pulse">PULSE</button>
+                            <button class="toggle-btn" data-anim="orbit">ORBIT</button>
+                            <button class="toggle-btn" data-anim="explode">EXPLODE</button>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">Intensity: <span class="param-value" id="animIntensityValue">1.0</span></label>
+                        <input type="range" class="slider" id="animIntensity" min="0" max="3" step="0.1" value="1" style="width: 100%;">
+                    </div>
+                    <div class="param-group">
+                        <button class="btn" id="clearAnimBtn" style="width: 100%; padding: 10px;">🗑️ CLEAR ALL</button>
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Effects -->
+                <div class="section">
+                    <div class="section-title">EFFECTS</div>
+                    <div class="section-content">
+                    <div class="param-group">
+                        <input type="checkbox" id="effectScanlines" class="effect-checkbox">
+                        <label for="effectScanlines" class="effect-label">Scanlines</label>
+                        <div class="effect-params" id="scanlineParams">
+                            <label class="param-label">Intensity: <span class="param-value" id="scanlineValue">0.5</span></label>
+                            <input type="range" class="slider" id="scanlineIntensity" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectGlow" class="effect-checkbox">
+                        <label for="effectGlow" class="effect-label">Glow</label>
+                        <div class="effect-params" id="glowParams">
+                            <label class="param-label">Strength: <span class="param-value" id="glowValue">0.5</span></label>
+                            <input type="range" class="slider" id="glowStrength" min="0" max="2" step="0.1" value="0.5" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectDistortion" class="effect-checkbox">
+                        <label for="effectDistortion" class="effect-label">Distortion</label>
+                        <div class="effect-params" id="distortParams">
+                            <label class="param-label">Amount: <span class="param-value" id="distortValue">0.05</span></label>
+                            <input type="range" class="slider" id="distortAmount" min="0" max="0.2" step="0.01" value="0.05" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectVignette" class="effect-checkbox">
+                        <label for="effectVignette" class="effect-label">Vignette</label>
+                        <div class="effect-params" id="vignetteParams">
+                            <label class="param-label">Radius: <span class="param-value" id="vignetteValue">0.7</span></label>
+                            <input type="range" class="slider" id="vignetteRadius" min="0.1" max="1.5" step="0.05" value="0.7" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectNoise" class="effect-checkbox">
+                        <label for="effectNoise" class="effect-label">Noise</label>
+                        <div class="effect-params" id="noiseParams">
+                            <label class="param-label">Amount: <span class="param-value" id="noiseValue">0.1</span></label>
+                            <input type="range" class="slider" id="noiseAmount" min="0" max="0.5" step="0.02" value="0.1" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectRGB" class="effect-checkbox">
+                        <label for="effectRGB" class="effect-label">RGB Split</label>
+                        <div class="effect-params" id="rgbParams">
+                            <label class="param-label">Offset: <span class="param-value" id="rgbValue">0.01</span></label>
+                            <input type="range" class="slider" id="rgbOffset" min="0" max="0.05" step="0.001" value="0.01" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectPixelate" class="effect-checkbox">
+                        <label for="effectPixelate" class="effect-label">Pixelate</label>
+                        <div class="effect-params" id="pixelateParams">
+                            <label class="param-label">Size: <span class="param-value" id="pixelValue">8</span></label>
+                            <input type="range" class="slider" id="pixelSize" min="2" max="32" step="2" value="8" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectKaleidoscope" class="effect-checkbox">
+                        <label for="effectKaleidoscope" class="effect-label">Kaleidoscope</label>
+                        <div class="effect-params" id="kaleidoParams">
+                            <label class="param-label">Segments: <span class="param-value" id="kaleidoValue">6</span></label>
+                            <input type="range" class="slider" id="kaleidoSegments" min="3" max="12" step="1" value="6" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectChromatic" class="effect-checkbox">
+                        <label for="effectChromatic" class="effect-label">Chromatic Aberration</label>
+                        <div class="effect-params" id="chromaticParams">
+                            <label class="param-label">Amount: <span class="param-value" id="chromaticValue">0.02</span></label>
+                            <input type="range" class="slider" id="chromaticAmount" min="0" max="0.1" step="0.005" value="0.02" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectBloom" class="effect-checkbox">
+                        <label for="effectBloom" class="effect-label">Bloom</label>
+                        <div class="effect-params" id="bloomParams">
+                            <label class="param-label">Strength: <span class="param-value" id="bloomValue">0.8</span></label>
+                            <input type="range" class="slider" id="bloomStrength" min="0" max="2" step="0.1" value="0.8" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectSwirl" class="effect-checkbox">
+                        <label for="effectSwirl" class="effect-label">Swirl</label>
+                        <div class="effect-params" id="swirlParams">
+                            <label class="param-label">Strength: <span class="param-value" id="swirlValue">2.0</span></label>
+                            <input type="range" class="slider" id="swirlStrength" min="0" max="5" step="0.1" value="2.0" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectInvert" class="effect-checkbox">
+                        <label for="effectInvert" class="effect-label">Invert Colors</label>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectPosterize" class="effect-checkbox">
+                        <label for="effectPosterize" class="effect-label">Posterize</label>
+                        <div class="effect-params" id="posterizeParams">
+                            <label class="param-label">Levels: <span class="param-value" id="posterizeValue">4</span></label>
+                            <input type="range" class="slider" id="posterizeLevels" min="2" max="16" step="1" value="4" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectEdgeDetect" class="effect-checkbox">
+                        <label for="effectEdgeDetect" class="effect-label">Edge Detect</label>
+                        <div class="effect-params" id="edgeParams">
+                            <label class="param-label">Strength: <span class="param-value" id="edgeValue">1.0</span></label>
+                            <input type="range" class="slider" id="edgeStrength" min="0" max="3" step="0.1" value="1.0" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectZoomBlur" class="effect-checkbox">
+                        <label for="effectZoomBlur" class="effect-label">Zoom Blur</label>
+                        <div class="effect-params" id="zoomParams">
+                            <label class="param-label">Strength: <span class="param-value" id="zoomValue">0.02</span></label>
+                            <input type="range" class="slider" id="zoomStrength" min="0" max="0.1" step="0.005" value="0.02" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectMirror" class="effect-checkbox">
+                        <label for="effectMirror" class="effect-label">Mirror</label>
+                        <div class="effect-params" id="mirrorParams">
+                            <label class="param-label">Mode</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <button class="toggle-btn active" data-mirror="horizontal">HORIZONTAL</button>
+                                <button class="toggle-btn" data-mirror="vertical">VERTICAL</button>
+                                <button class="toggle-btn" data-mirror="both">BOTH</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectThermal" class="effect-checkbox">
+                        <label for="effectThermal" class="effect-label">Thermal Vision</label>
+                        <div class="effect-params" id="thermalParams">
+                            <label class="param-label">Intensity: <span class="param-value" id="thermalValue">1.0</span></label>
+                            <input type="range" class="slider" id="thermalIntensity" min="0" max="2" step="0.1" value="1.0" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <input type="checkbox" id="effectRipple" class="effect-checkbox">
+                        <label for="effectRipple" class="effect-label">Ripple</label>
+                        <div class="effect-params" id="rippleParams">
+                            <label class="param-label">Strength: <span class="param-value" id="rippleValue">0.1</span></label>
+                            <input type="range" class="slider" id="rippleStrength" min="0" max="0.3" step="0.01" value="0.1" style="width: 100%;">
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="preview-panel">
+            <div class="panel-header">
+                ► LIVE PREVIEW
+                <div class="slider-control">
+                    <span>Time: <span id="timeSpeedValue">1.0</span>x</span>
+                    <input type="range" class="slider" id="timeSpeed" min="0" max="3" step="0.1" value="1">
+                </div>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="shaderCanvas"></canvas>
+                <div class="error-display" id="errorDisplay"></div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <span>FPS: <span id="fpsDisplay">0</span></span>
+            <span>Resolution: <span id="resDisplay">0x0</span></span>
+            <span id="statusText">READY</span>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script src="/shared/nav-menu.js"></script>
+</body>
+</html>
